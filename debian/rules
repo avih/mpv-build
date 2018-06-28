@@ -1,11 +1,9 @@
 #! /usr/bin/make -f
 
-export DEB_BUILD_MAINT_OPTIONS:=hardening=+all
-
 # To enable parallel building:
-# You can either set DEB_BUILD_OPTIONS=paralell=<num-procs> in your build environment
+# You can either set DEB_BUILD_OPTIONS=parallel=<num-procs> in your build environment
 # or provide the -j<numprocs> option to debuild or dpkg-buildpackage, which
-# ammounts to the same thing.
+# amounts to the same thing.
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 # use MFLAGS, rather than MAKEFLAGS as the latter is used by make internally
@@ -16,27 +14,54 @@ endif
 # make .PHONY all the targets that have name collisions with the scripts
 # see http://www.debian.org/doc/manuals/maint-guide/dreq.en.html#rules
 .PHONY: clean build install
-# Apparently, the above isn't enough because of the "%" target. Make the problematic targets explicit
-clean:
-	exec dh $@
-build:
-	exec dh $@
-install:
+# The above isn't enough because of the "%" target. Make the problematic targets explicit:
+clean build install:
 	exec dh $@
 # Handle all other targets in the usual way.
-# The --parallel flag to dh doesn't seem to have the intended effect
-# so leave it out.
 %:
 	exec dh $@
 
-libass_config:
+projects := $(shell ./get-config -- config_projects)
+projects_build := $(patsubst %,%_build,$(projects))
+
+mujs_config:
+	./build --mode=config mujs
+
+mujs_build: mujs_config
+	./build --mode=build mujs -- $(MFLAGS)
+
+shaderc_config:
+	./build --mode=config shaderc
+
+shaderc_build: shaderc_config
+	./build --mode=build shaderc
+
+crossc_config:
+	./build --mode=config crossc
+
+crossc_build: crossc_config
+	./build --mode=build crossc -- $(MFLAGS)
+
+fribidi_config:
+	./build --mode=config fribidi
+
+fribidi_build: fribidi_config
+	./build --mode=build fribidi -- $(MFLAGS)
+
+libass_config: $(filter fribidi_build,$(projects_build))
 	./build --mode=config libass
 
 libass_build: libass_config
 	./build --mode=build libass -- $(MFLAGS)
 
+libaom_config:
+	./build --mode=config libaom
+
+libaom_build: libaom_config
+	./build --mode=build libaom -- $(MFLAGS)
+
 # depend on libass_build in case the user specified --enable-libass in ffmpeg_options
-ffmpeg_config: libass_build
+ffmpeg_config: $(filter libass_build libaom_build,$(projects_build))
 	./build --mode=config ffmpeg -- \
 		--enable-gnutls \
 		--enable-libgme \
@@ -62,7 +87,7 @@ ffmpeg_build: ffmpeg_config
 	./build --mode=build ffmpeg -- $(MFLAGS)
 
 # put the config in the right place and drop the local/ since it's package managed now
-override_dh_auto_configure: ffmpeg_build libass_build
+override_dh_auto_configure: $(filter-out mpv_build,$(projects_build))
 	./build --mode=config mpv -- --prefix=/usr --confdir=/etc/mpv \
 		--enable-openal \
 		--enable-dvdread \
@@ -111,6 +136,7 @@ override_dh_auto_install:
 	-not -name 'gen-x11-icon.sh' \
 	-not -name 'file2string.pl' \
 	-not -name 'uncrustify.cfg' \
+	-not -name '*.pyc' \
 	-printf "%P\0" | \
 	xargs -0i /usr/bin/install -m644 "$(TOOLSSOURCE)/{}" "$(TOOLSDEST)/{}"
 
