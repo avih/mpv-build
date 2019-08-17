@@ -1,0 +1,5 @@
+#! /bin/sh
+
+set -ex
+
+exec ninja -C "$config_libplacebo_source/build" install "$@"

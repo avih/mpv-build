@@ -1,0 +1,29 @@
+#! /bin/sh
+
+set -ex
+
+OPTIONS=
+
+case $config_build_pic in yes)
+	OPTIONS="$OPTIONS --b_staticpic=true"
+;; no)
+	OPTIONS="$OPTIONS --b_staticpic=false"
+esac
+
+case $config_build_host in ?*)
+	case $* in *cross-file*) ;; *)
+		cat >&2 <<EOT
+It seems you are trying to cross-compile libplacebo.
+This is currently not implemented automatically because meson requires a
+target host specific configuration file for that.
+
+Please use an option --cross-file=/path/to/meson-cross.txt to enable
+cross-compilation.
+
+See https://mesonbuild.com/Cross-compilation.html for details.
+EOT
+		exit 2
+	esac
+esac
+
+exec meson setup --buildtype=release --default-library=static --libdir=lib --prefix="$config_local_prefix" $OPTIONS "$@" "$config_libplacebo_source/build" "$config_libplacebo_source"

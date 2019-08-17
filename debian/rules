@@ -4,10 +4,14 @@
 # You can either set DEB_BUILD_OPTIONS=parallel=<num-procs> in your build environment
 # or provide the -j<numprocs> option to debuild or dpkg-buildpackage, which
 # amounts to the same thing.
-ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-# use MFLAGS, rather than MAKEFLAGS as the latter is used by make internally
+parallel=$(filter parallel=%,$(DEB_BUILD_OPTIONS))
+ifeq (,$(parallel))
+	NINJAFLAGS += -j1
+else
+	NUMJOBS = $(patsubst parallel=%,%,$(parallel))
+    # use MFLAGS, rather than MAKEFLAGS as the latter is used by make internally
 	MFLAGS += -j$(NUMJOBS)
+	NINJAFLAGS += -j$(NUMJOBS)
 	WAFFLAGS += -j$(NUMJOBS)
 endif
 
@@ -34,7 +38,7 @@ shaderc_config:
 	./build --mode=config shaderc
 
 shaderc_build: shaderc_config
-	./build --mode=build shaderc
+	./build --mode=build shaderc -- $(NINJAFLAGS)
 
 crossc_config:
 	./build --mode=config crossc
@@ -59,6 +63,12 @@ libaom_config:
 
 libaom_build: libaom_config
 	./build --mode=build libaom -- $(MFLAGS)
+
+libplacebo_config: $(filter shaderc_build,$(projects_build))
+	./build --mode=config libplacebo
+
+libplacebo_build: libplacebo_config
+	./build --mode=build libplacebo -- $(NINJAFLAGS)
 
 # depend on libass_build in case the user specified --enable-libass in ffmpeg_options
 ffmpeg_config: $(filter libass_build libaom_build,$(projects_build))
