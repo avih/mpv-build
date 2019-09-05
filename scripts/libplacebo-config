@@ -5,9 +5,9 @@ set -ex
 OPTIONS=
 
 case $config_build_pic in yes)
-	OPTIONS="$OPTIONS --b_staticpic=true"
+	OPTIONS="$OPTIONS -Db_staticpic=true"
 ;; no)
-	OPTIONS="$OPTIONS --b_staticpic=false"
+	OPTIONS="$OPTIONS -Db_staticpic=false"
 esac
 
 case $config_build_host in ?*)
