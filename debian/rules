@@ -101,9 +101,7 @@ override_dh_auto_configure: $(filter-out mpv_build,$(projects_build))
 	./build --mode=config mpv -- --prefix=/usr --confdir=/etc/mpv \
 		--enable-openal \
 		--enable-dvdnav \
-		--enable-cdda \
-		--enable-libsmbclient \
-		--enable-zsh-comp
+		--enable-cdda
 
 override_dh_auto_build:
 	./build --mode=build mpv -- $(WAFLAGS)
