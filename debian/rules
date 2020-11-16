@@ -87,7 +87,6 @@ ffmpeg_config: $(filter libass_build libaom_build,$(projects_build))
 		--enable-libtwolame \
 		--enable-libvorbis \
 		--enable-libvpx \
-		--enable-libwavpack \
 		--enable-ladspa \
 		--enable-libbs2b \
 		--enable-gpl --enable-libxvid --enable-libx264 \
