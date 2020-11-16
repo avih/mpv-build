@@ -66,8 +66,8 @@ Build-Depends:
  libxvidcore-dev,
  ninja-build,
  pkg-config,
- python,
- python-docutils,
+ python | python-is-python3,
+ python-docutils | python3-docutils,
  x11proto-core-dev,
  yasm,
  zlib1g-dev
